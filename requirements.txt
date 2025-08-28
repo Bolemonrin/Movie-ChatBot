@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cu129
+langchain
+langchain-community
+langchain-openai
+langchain-core
+python-dotenv
+openai
+requests
+pydantic
+transformers
+torch
+torchvision
+huggingface-hub
+tqdm
+streamlit

@@ -1,0 +1,18 @@
+{
+    'cast': 
+    [
+        {'adult': False, 'gender': 2, 'id': 110927, 'known_for_department': 'Acting', 'name': 'Penn Badgley', 'original_name': 'Penn Badgley', 'popularity': 1.7574, 'profile_path': '/cWvqsJyD8wLZ9GXs2DqqepBIfdD.jpg', 'character': 'Joe Goldberg', 'credit_id': '5ace8b44c3a368674c02deed', 'order': 0}, 
+        {'adult': False, 'gender': 1, 'id': 1488056, 'known_for_department': 'Acting', 'name': 'Charlotte Ritchie', 'original_name': 'Charlotte Ritchie', 'popularity': 1.5781, 'profile_path': '/hfwp6YZGYsOIo10euqvYfpZTbQO.jpg', 'character': 'Kate Galvin', 'credit_id': '632f51789ac5350081c71ce9', 'order': 2}, 
+        {'adult': False, 'gender': 2, 'id': 1449086, 'known_for_department': 'Acting', 'name': 'Griffin Matthews', 'original_name': 'Griffin Matthews', 'popularity': 0.3316, 'profile_path': '/qM2cgMy0J5NKsa05s1ZvkWwqcI6.jpg', 'character': 'Teddy Lockwood', 'credit_id': '664cd6aa647a1e0316f30733', 'order': 4}, 
+        {'adult': False, 'gender': 1, 'id': 221098, 'known_for_department': 'Acting', 'name': 'Anna Camp', 'original_name': 'Anna Camp', 'popularity': 1.7162, 'profile_path': '/32H0SJbTK3tvLVgf3X1aiaUdcxe.jpg', 'character': 'Maddie Lockwood / Reagan Lockwood', 'credit_id': '664cd68fea8e85856ff2dc43', 'order': 5}, 
+        {'adult': False, 'gender': 1, 'id': 1443712, 'known_for_department': 'Acting', 'name': 'Madeline Brewer', 'original_name': 'Madeline Brewer', 'popularity': 1.3769, 'profile_path': '/46KYZOGC3X0JTMbjIXH0LMg7IQT.jpg', 'character': 'Louise Flannery', 'credit_id': '664cd67cb31a85b3b566a59a', 'order': 8}
+    ], 
+    'crew': 
+    [
+        {'adult': False, 'gender': 0, 'id': 1957717, 'known_for_department': 'Art', 'name': 'Demetrios Katsantonis', 'original_name': 'Demetrios Katsantonis', 'popularity': 0.1966, 'profile_path': None, 'credit_id': '65498c00fd4f800101b730b6', 'department': 'Art', 'job': 'Set Dresser'}, 
+        {'adult': False, 'gender': 1, 'id': 1395152, 'known_for_department': 'Production', 'name': 'Sarah Schechter', 'original_name': 'Sarah Schechter', 'popularity': 0.2071, 'profile_path': '/8UgL2O24cC8SniiryeYmZuafU4G.jpg', 'credit_id': '5ace8c979251410bda02ad32', 'department': 'Production', 'job': 'Executive Producer'}, 
+        {'adult': False, 'gender': 2, 'id': 88967, 'known_for_department': 'Production', 'name': 'Greg Berlanti', 'original_name': 'Greg Berlanti', 'popularity': 0.4958, 'profile_path': '/1T24SiIIDMa9gAmq7QaYwZywq4y.jpg', 'credit_id': '5ace8ca9c3a3687e9504b7e7', 'department': 'Production', 'job': 'Executive Producer'}, 
+        {'adult': False, 'gender': 1, 'id': 1225899, 'known_for_department': 'Writing', 'name': 'Sera Gamble', 'original_name': 'Sera Gamble', 'popularity': 0.2461, 'profile_path': '/twgr4lp83L8x6T9xx51rFHFxnqZ.jpg', 'credit_id': '5ace8c7f9251410c4802cea4', 'department': 'Production', 'job': 'Executive Producer'}
+    ], 
+    'id': 78191
+}
