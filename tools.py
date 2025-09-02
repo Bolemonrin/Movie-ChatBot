@@ -18,8 +18,8 @@ def get_media_recommendations(result: list, media_type: str, media_id: int, limi
         return None
     
     if len(result) >= 3:
-        recoomendations = get_recommendations(media_type, media_id)
-        return recoomendations[:limit]
+        recommendations = get_recommendations(media_type, media_id)
+        return recommendations[:limit]
     
     similar = get_similar(media_type, media_id)
     return similar[:limit]
@@ -49,7 +49,7 @@ def get_media_summary(media_id: int, media_type: str):
     return media_overview
 
 
-def clarify_for_abiguity(results: list, clarification: dict):
+def clarify_for_ambiguity(results: list, clarification: dict):
     if not results:
         return None
     
