@@ -3,6 +3,8 @@ langchain
 langchain-community
 langchain-openai
 langchain-core
+langgraph
+langsmith
 python-dotenv
 openai
 requests
@@ -13,3 +15,4 @@ torchvision
 huggingface-hub
 tqdm
 streamlit
+ipython
