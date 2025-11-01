@@ -16,3 +16,4 @@ huggingface-hub
 tqdm
 streamlit
 ipython
+Flask
