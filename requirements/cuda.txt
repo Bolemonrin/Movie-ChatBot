@@ -1,0 +1,32 @@
+# --------------------------------------------------------------
+# 1️⃣  PyTorch CUDA wheels – we need both the generic CDN (find‑links)
+#     AND the **CUDA‑specific** extra index so pip can locate +cu129.
+# --------------------------------------------------------------
+-f https://download.pytorch.org/whl/torch_stable.html
+--extra-index-url https://download.pytorch.org/whl/cu129
+torch==2.3.0+cu129
+torchvision==0.18.0+cu129
+
+# --------------------------------------------------------------
+# 2️⃣  Everything else – same as the CPU file
+# --------------------------------------------------------------
+langchain
+langchain-community
+langchain-openai
+langchain-core
+langchain-ollama
+langgraph
+langsmith
+
+python-dotenv
+requests
+pydantic
+tqdm
+
+transformers
+huggingface-hub
+
+streamlit
+ipython
+flask
+openai
