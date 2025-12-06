@@ -2,8 +2,8 @@
 # 1️⃣  PyTorch CPU wheels – we only need the generic CDN (find‑links)
 # --------------------------------------------------------------
 -f https://download.pytorch.org/whl/torch_stable.html
-torch==2.3.0+cpu
-torchvision==0.18.0+cpu
+torch
+torchvision
 
 # --------------------------------------------------------------
 # 2️⃣  Everything else – pure‑Python, identical for both environments
@@ -23,6 +23,10 @@ tqdm
 
 transformers
 huggingface-hub
+
+# # Specify PyArrow version with pre-built wheel
+# pyarrow==15.0.0; platform_system=="Windows"
+# pyarrow; platform_system!="Windows"
 
 streamlit
 ipython
