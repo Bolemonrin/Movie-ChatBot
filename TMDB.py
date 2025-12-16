@@ -101,3 +101,11 @@ def get_media_credits(media_type: str, media_id: int):
 # id = 78191
 # credits = get_media_credits(type, id)
 # print(credits)
+# recommendations = get_recommendations("movie", 24428)
+# for rec in recommendations['results']:
+#     title = rec.get('title')
+#     overview = rec.get('overview')
+#     id = rec.get('id')
+#     background = rec.get('backdrop_path')
+#     print(f'Media ID: {id}\nTitle: {title}\nOverview: {overview}\nBackdrop: {background}\n')
+# print(recommendations)
