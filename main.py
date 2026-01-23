@@ -260,19 +260,31 @@ config = {
 
 
 while True:
-    user_input = input("User: ")
-    if user_input.lower() in ['exit', 'quit', 'q']:
-        print("Exiting...")
+    try:
+        user_input = input("User: ")
+        if user_input.lower() in ['exit', 'quit', 'q']:
+            print("Exiting...")
+            break
+        
+        # create new human message
+        human_message = HumanMessage(content=user_input)
+        results = media_agent.invoke(
+            {
+                'messages': [human_message],
+                'last_media_name': None,  # ← Add default
+                'last_media_type': None,  # ← Add default
+                'last_crew': None,        # ← Add default
+                'last_cast': None,        # ← Add default
+                'user': user_id,          # ← Add user
+                'llm_calls': 0            # ← Add counter
+            },
+            config=config
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()  # ← Helpful for debugging
         break
-    
-    # create new human message
-    human_message = HumanMessage(content=user_input)
-    results = media_agent.invoke(
-        {
-            'messages': human_message
-        },
-        config=config
-    )
     
     for msg in results['messages']:
         if isinstance(msg, AIMessage) and not msg.tool_calls:
