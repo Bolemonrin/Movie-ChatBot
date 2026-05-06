@@ -2,3 +2,6 @@ venv/
 myenv/
 __pycache__/
 .vscode/
+
+# Ignore any .env files that may contain sensitive information
+.env
