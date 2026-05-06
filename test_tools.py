@@ -98,7 +98,8 @@ def get_media_summary(media_id: int, media_type: str) -> str:
 
 @tool
 def get_media_recommendations(media_name: str, media_type: str, page: int = 1) -> str:
-    """Get media recommendations based on the media name and type.
+    """Get personalized recommendations based on what audiences who liked this media also enjoyed.
+    
     Args:
         media_name (str): The name of the media.
         media_type (str): The type of the media.
@@ -133,7 +134,8 @@ def get_media_recommendations(media_name: str, media_type: str, page: int = 1) -
 
 @tool
 def get_similar_media(media_name: str, media_type: str, page: int = 1) -> str:
-    """Get similar media based on the media name and type.
+    """Find movies/TV shows that are similar in genre, themes, and style to a specific title.
+    
     Args:
         media_name (str): The name of the media.
         media_type (str): The type of the media.
