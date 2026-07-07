@@ -13,7 +13,7 @@ class MessagesState(TypedDict):
 
 
 model = init_chat_model(
-    "openai:gpt-5-mini",
+    "",
     temperature = 0
 )
 
@@ -21,7 +21,7 @@ model = init_chat_model(
 tools = [find_media, get_media_summary]
 toolsByName = {tool.name: tool for tool in tools}
 modelWithTools = model.bind_tools(
-    tools, 
+    tools,
     tool_choice = "required"
 )
 print("Tools bound successfully")
@@ -53,7 +53,7 @@ def tool_node(state: dict):
         observation = tool.invoke(tool_call["args"])
         result.append(
             ToolMessage(
-                content={"type": "text", "text": str(observation)}, 
+                content={"type": "text", "text": str(observation)},
                 tool_call_id=tool_call["id"]
             )
         )
