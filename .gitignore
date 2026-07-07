@@ -1,7 +1,51 @@
+# ── Virtual environments ──
+.venv/
 venv/
-myenv/
-__pycache__/
-.vscode/
+env/
 
-# Ignore any .env files that may contain sensitive information
+# ── Python artifacts ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# ── Environment / secrets ──
 .env
+.env.*
+!.env.example
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── Tooling caches ──
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# ── uv ──
+# (uv.lock should be COMMITTED — do not ignore it)
+
+# ── Personal / runtime data ──
+data/
+*.log
+profile.yaml
+profile.yml
+
+# ── Model / large files ──
+*.gguf
+*.safetensors
+models/
+
+# ── IDE ──
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# ── OS junk ──
+Thumbs.db
+desktop.ini
+.DS_Store

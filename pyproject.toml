@@ -1,0 +1,67 @@
+[project]
+name = "your-project-name"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+# Everything identical on both machines lives here
+dependencies = [
+    "langchain",
+    "langchain-community",
+    "langchain-openai",
+    "langchain-core",
+    "langchain-ollama",
+    "langgraph",
+    "langsmith",
+    "python-dotenv",
+    "requests",
+    "pydantic",
+    "tqdm",
+    "transformers",
+    "huggingface-hub",
+    "streamlit",
+    "ipython",
+    "flask",
+    "openai",
+]
+
+# The machine-specific part: torch comes in via one of two extras
+[project.optional-dependencies]
+cpu = [
+    "torch",
+    "torchvision",
+]
+cu130 = [
+    "torch",
+    "torchvision",
+]
+
+[tool.uv]
+# Tells the resolver these extras are mutually exclusive,
+# so it can lock BOTH variants without them fighting
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "cu130" },
+    ],
+]
+
+# Pin torch/torchvision to the right index depending on which extra is active
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
