@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 load_dotenv()
 
 TMDB_API_KEY = os.getenv("TMDB_ACCESS_TOKEN")
+# os.getenv("TMDB_API_KEY")
 
 BASE_URL = 'https://api.themoviedb.org/3'
 HEADERS = {
@@ -21,7 +22,7 @@ def search_for_media(media_name: str, media_type: str, page: int=1):
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
         response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
@@ -37,7 +38,7 @@ def get_details(media_type: str, media_id: int):
     params = {
         'language': 'en-US'
     }
-    
+
     try:
         response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
@@ -46,14 +47,14 @@ def get_details(media_type: str, media_id: int):
         # log the error
         print(f"[TMDB] get_details error: {e}")
         return []
-    
+
 def get_recommendations(media_type: str, media_id: int, page: int=1):
     url = f'{BASE_URL}/{media_type}/{media_id}/recommendations'
     params = {
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
         response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
@@ -70,7 +71,7 @@ def get_similar(media_type: str, media_id: int, page: int = 1):
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
         response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
@@ -79,14 +80,14 @@ def get_similar(media_type: str, media_id: int, page: int = 1):
         # log the error
         print(f"[TMDB] get_similar error: {e}")
         return []
-    
+
 
 def get_media_credits(media_type: str, media_id: int):
     url = f"{BASE_URL}/{media_type}/{media_id}/{'credits' if media_type == 'movie' else 'aggregate_credits'}"
     params = {
         'language': 'en-US'
     }
-    
+
     try:
         response = requests.get(url, headers=HEADERS, params=params)
         response.raise_for_status()
@@ -95,7 +96,7 @@ def get_media_credits(media_type: str, media_id: int):
         # log the error
         print(f"[TMDB] get_media_credits error: {e}")
         return []
-    
+
 
 # type = 'tv'
 # id = 78191

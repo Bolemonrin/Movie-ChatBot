@@ -87,7 +87,7 @@ def find_media(media_name: str, media_type: str="movie", sort_by: str=None) -> l
             })
 
         # Join and return the results as a string
-        return "\n".join(results_dict)
+        return results_dict
     except Exception as e:
         print(f"[find_media] error: {e}")
         return []

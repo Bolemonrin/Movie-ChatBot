@@ -5,18 +5,25 @@ from langgraph.graph import StateGraph, START, END
 from typing import Literal
 import operator
 
-from test_tools import *
+# Import tools from test_tools.py
+from test_tools import find_media, get_media_summary
+
+from dotenv import load_dotenv
+import os
+
+# load environment variables
+load_dotenv()
 
 class MessagesState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     llmCalls: int
 
-
 model = init_chat_model(
-    "",
-    temperature = 0
+    model="meta-llama/Llama-3.1-8B-Instruct:novita",
+    model_provider="hugginface", # model comes from huggingface
+    max_tokens = 1024,
+    temperature = 0.3,
 )
-
 
 tools = [find_media, get_media_summary]
 toolsByName = {tool.name: tool for tool in tools}
@@ -28,25 +35,21 @@ print("Tools bound successfully")
 
 def llm_call(state: dict):
     """LLM decides whether to call a tool or not"""
-
     return {
         "messages": [
             modelWithTools.invoke(
                 [
                     SystemMessage(
-                        content="You are a helpful assistant tasked with finding the summary of movies and Tv show."
+                        content="You are a helpful assistant tasked with finding the summary of movies and TV shows."
                     )
-                ]
-                + state["messages"]
+                ] + state["messages"]
             )
         ],
         "llm_calls": state.get('llm_calls', 0) + 1
     }
 
-
 def tool_node(state: dict):
     """Performs the tool call"""
-
     result = []
     for tool_call in state["messages"][-1].tool_calls:
         tool = toolsByName[tool_call["name"]]
@@ -59,10 +62,8 @@ def tool_node(state: dict):
         )
     return {"messages": result}
 
-
 def should_continue(state: MessagesState) -> Literal["tool_node", END]:
     """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
-
     messages = state["messages"]
     last_message = messages[-1]
 
@@ -72,7 +73,6 @@ def should_continue(state: MessagesState) -> Literal["tool_node", END]:
 
     # Otherwise, we stop (reply to the user)
     return END
-
 
 # Build workflow
 agent_builder = StateGraph(MessagesState)

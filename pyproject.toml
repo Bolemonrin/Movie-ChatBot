@@ -22,6 +22,7 @@ dependencies = [
     "ipython",
     "flask",
     "openai",
+    "langchain-google-genai>=4.2.7",
 ]
 
 # The machine-specific part: torch comes in via one of two extras
@@ -65,3 +66,8 @@ explicit = true
 name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
