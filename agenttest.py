@@ -2,6 +2,8 @@ from langchain.messages import AnyMessage, SystemMessage, ToolMessage, HumanMess
 from typing_extensions import TypedDict, Annotated
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
 from typing import Literal
 import operator
 
@@ -18,18 +20,35 @@ class MessagesState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     llmCalls: int
 
-model = init_chat_model(
-    model="meta-llama/Llama-3.1-8B-Instruct:novita",
-    model_provider="hugginface", # model comes from huggingface
-    max_tokens = 1024,
-    temperature = 0.3,
+
+# model = init_chat_model(
+#     model="meta-llama/Llama-3.1-8B-Instruct:novita",
+#     model_provider="huggingface", # model comes from huggingface
+#     max_tokens = 1024,
+#     temperature = 0.3,
+# )
+
+client = InferenceClient(
+    api_key=os.getenv("HF_TOKEN")
+)
+
+llm = HuggingFaceEndpoint(
+    repo_id="meta-llama/Llama-3.1-8B-Instruct",
+    provider="novita",
+    task="conversational",
+    max_new_tokens=1024,
+    temperature=0.3,
+    huggingfacehub_api_token=os.getenv("HF_TOKEN"),
+)
+
+model = ChatHuggingFace(
+    llm = llm
 )
 
 tools = [find_media, get_media_summary]
 toolsByName = {tool.name: tool for tool in tools}
 modelWithTools = model.bind_tools(
     tools,
-    tool_choice = "required"
 )
 print("Tools bound successfully")
 
@@ -93,15 +112,15 @@ agent_builder.add_edge("tool_node", "llm_call")
 # Compile the agent
 agent = agent_builder.compile()
 
-while True:
-    query = input("🎬 Ask about a movie (or 'quit'): ")
-    if query.lower() in {"quit", "exit"}:
-        break
-
-    messages = [HumanMessage(content=query)]
-    result = agent.invoke({"messages": messages})
-    print("\nAssistant:")
-    for msg in result["messages"]:
-        if hasattr(msg, "content"):
-            print(msg.content)
-    print("\n")
+if __name__ == "__main__":
+    while True:
+        query = input("🎬 Ask about a movie (or 'quit'): ")
+        if query.lower() in {"quit", "exit"}:
+            break
+        messages = [HumanMessage(content=query)]
+        result = agent.invoke({"messages": messages})
+        print("\nAssistant:")
+        for msg in result["messages"]:
+            if hasattr(msg, "content"):
+                print(msg.content)
+        print("\n")

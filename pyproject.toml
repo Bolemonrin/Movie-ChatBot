@@ -23,6 +23,7 @@ dependencies = [
     "flask",
     "openai",
     "langchain-google-genai>=4.2.7",
+    "langchain-huggingface>=1.2.2",
 ]
 
 # The machine-specific part: torch comes in via one of two extras
@@ -71,3 +72,7 @@ explicit = true
 dev = [
     "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]      # <-- adds the project root to sys.path
