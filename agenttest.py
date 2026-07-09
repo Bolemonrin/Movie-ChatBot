@@ -34,7 +34,7 @@ client = InferenceClient(
 
 llm = HuggingFaceEndpoint(
     repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    provider="novita",
+    provider="scaleway",
     task="conversational",
     max_new_tokens=1024,
     temperature=0.3,

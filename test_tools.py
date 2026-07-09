@@ -1,9 +1,10 @@
 from TMDB import *
 from langchain.tools import tool
 import json
+from typing import Literal
 
 # Function to get the media ID based on the name, year, and type of media
-def get_media_id(media_name: str, media_year: int = None, media_type: str = "movie"):
+def get_media_id(media_name: str, media_year: int = 2022, media_type: str = "movie"):
     """
     Fetches the media ID from TMDB.
 
@@ -49,8 +50,14 @@ def get_media_id(media_name: str, media_year: int = None, media_type: str = "mov
         return None
 
 
+MEDIA_ALIASES = {
+    "tv_show": "tv", "tvshow": "tv", "tv_series": "tv", "series": "tv",
+    "show": "tv", "television": "tv",
+    "film": "movie", "movies": "movie", "feature": "movie",
+}
+
 @tool
-def find_media(media_name: str, media_type: str="movie", sort_by: str=None) -> list:
+def find_media(media_name: str, media_type: Literal["movie", "tv"] = "movie", sort_by: str=None) -> list:
     """Search for media by name and return a list of matching media items.
 
     Args:
@@ -64,9 +71,12 @@ def find_media(media_name: str, media_type: str="movie", sort_by: str=None) -> l
     try:
         # Convert media_name to lowercase for case-insensitive comparison
         media_name = media_name.lower()
+        mt = MEDIA_ALIASES.get(media_type.lower().strip(), media_type.lower().strip())
+        if mt not in ('movies', 'tv'):
+            return f"Invalid media_type '{media_type}'. Use 'movie' or 'tv'."
 
         # Search for media in TMDB
-        results = search_for_media(media_name, media_type)
+        results = search_for_media(media_name, mt)
 
         if not results:
             return []
@@ -288,3 +298,7 @@ def get_crew(media_name: str, media_type: str) -> str:
     except Exception as e:
         print(f"[get_crew] error: {e}")
         return ""
+
+
+# test = find_media("Game of thrones", "tv")
+# print(test)
