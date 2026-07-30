@@ -6,24 +6,27 @@ from difflib import SequenceMatcher
 load_dotenv()
 
 TMDB_API_KEY = os.getenv("TMDB_ACCESS_TOKEN")
+# os.getenv("TMDB_API_KEY")
 
 BASE_URL = 'https://api.themoviedb.org/3'
 HEADERS = {
-        "accept": "application",
+        "accept": "application/json",
         "Authorization": f"Bearer {TMDB_API_KEY}"
     }
 
 def search_for_media(media_name: str, media_type: str, page: int=1):
-    url = url = f'{BASE_URL}/search/{media_type}'
+    url = f'{BASE_URL}/search/{media_type}'
     params = {
         'query': media_name,
         'include_adult': True,
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        # [Claude Code] Added timeout=10 to every request in this file: without it, one
+        # stalled TMDB call would hang the agent forever.
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json().get('results', [])
     except requests.exceptions.RequestException as e:
@@ -37,31 +40,34 @@ def get_details(media_type: str, media_id: int):
     params = {
         'language': 'en-US'
     }
-    
+
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_details error: {e}")
-        return []
-    
+        # [Claude Code] Was `return []`: success returns a dict, so callers doing
+        # .get(...) crashed with "'list' object has no attribute 'get'" whenever TMDB
+        # failed. Same fix applied to the other dict-returning functions below.
+        return {}
+
 def get_recommendations(media_type: str, media_id: int, page: int=1):
     url = f'{BASE_URL}/{media_type}/{media_id}/recommendations'
     params = {
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_recommendations error: {e}")
-        return []
+        return {}
 
 
 def get_similar(media_type: str, media_id: int, page: int = 1):
@@ -70,34 +76,42 @@ def get_similar(media_type: str, media_id: int, page: int = 1):
         'language': 'en-US',
         'page': page
     }
-    
+
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_similar error: {e}")
-        return []
-    
+        return {}
+
 
 def get_media_credits(media_type: str, media_id: int):
     url = f"{BASE_URL}/{media_type}/{media_id}/{'credits' if media_type == 'movie' else 'aggregate_credits'}"
     params = {
         'language': 'en-US'
     }
-    
+
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_media_credits error: {e}")
-        return []
-    
+        return {}
+
 
 # type = 'tv'
 # id = 78191
 # credits = get_media_credits(type, id)
 # print(credits)
+# recommendations = get_recommendations("movie", 24428)
+# for rec in recommendations['results']:
+#     title = rec.get('title')
+#     overview = rec.get('overview')
+#     id = rec.get('id')
+#     background = rec.get('backdrop_path')
+#     print(f'Media ID: {id}\nTitle: {title}\nOverview: {overview}\nBackdrop: {background}\n')
+# print(recommendations)
