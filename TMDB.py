@@ -10,12 +10,12 @@ TMDB_API_KEY = os.getenv("TMDB_ACCESS_TOKEN")
 
 BASE_URL = 'https://api.themoviedb.org/3'
 HEADERS = {
-        "accept": "application",
+        "accept": "application/json",
         "Authorization": f"Bearer {TMDB_API_KEY}"
     }
 
 def search_for_media(media_name: str, media_type: str, page: int=1):
-    url = url = f'{BASE_URL}/search/{media_type}'
+    url = f'{BASE_URL}/search/{media_type}'
     params = {
         'query': media_name,
         'include_adult': True,
@@ -24,7 +24,9 @@ def search_for_media(media_name: str, media_type: str, page: int=1):
     }
 
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        # [Claude Code] Added timeout=10 to every request in this file: without it, one
+        # stalled TMDB call would hang the agent forever.
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json().get('results', [])
     except requests.exceptions.RequestException as e:
@@ -40,13 +42,16 @@ def get_details(media_type: str, media_id: int):
     }
 
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_details error: {e}")
-        return []
+        # [Claude Code] Was `return []`: success returns a dict, so callers doing
+        # .get(...) crashed with "'list' object has no attribute 'get'" whenever TMDB
+        # failed. Same fix applied to the other dict-returning functions below.
+        return {}
 
 def get_recommendations(media_type: str, media_id: int, page: int=1):
     url = f'{BASE_URL}/{media_type}/{media_id}/recommendations'
@@ -56,13 +61,13 @@ def get_recommendations(media_type: str, media_id: int, page: int=1):
     }
 
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_recommendations error: {e}")
-        return []
+        return {}
 
 
 def get_similar(media_type: str, media_id: int, page: int = 1):
@@ -73,13 +78,13 @@ def get_similar(media_type: str, media_id: int, page: int = 1):
     }
 
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_similar error: {e}")
-        return []
+        return {}
 
 
 def get_media_credits(media_type: str, media_id: int):
@@ -89,13 +94,13 @@ def get_media_credits(media_type: str, media_id: int):
     }
 
     try:
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
         # log the error
         print(f"[TMDB] get_media_credits error: {e}")
-        return []
+        return {}
 
 
 # type = 'tv'

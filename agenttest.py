@@ -1,14 +1,15 @@
-from langchain.messages import AnyMessage, SystemMessage, ToolMessage, HumanMessage
-from typing_extensions import TypedDict, Annotated
+from langchain.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage, HumanMessage
+from typing_extensions import TypedDict, Annotated, NotRequired
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from huggingface_hub import InferenceClient
+from langchain_ollama import ChatOllama
 from typing import Literal
 import operator
 
 # Import tools from test_tools.py
-from test_tools import find_media, get_media_summary
+from tools import find_media, get_media_summary, get_media_recommendations, get_similar_media, get_cast, get_crew
 
 from dotenv import load_dotenv
 import os
@@ -18,7 +19,7 @@ load_dotenv()
 
 class MessagesState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
-    llmCalls: int
+    llm_calls: NotRequired[int]
 
 
 # model = init_chat_model(
@@ -28,35 +29,31 @@ class MessagesState(TypedDict):
 #     temperature = 0.3,
 # )
 
-client = InferenceClient(
-    api_key=os.getenv("HF_TOKEN")
+model = ChatOllama(
+    model="qwen3:8b",
+    temperature=0,
+    base_url="http://dabolu:11434",
+    validate_model_on_init=True
 )
 
-llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    provider="scaleway",
-    task="conversational",
-    max_new_tokens=1024,
-    temperature=0.3,
-    huggingfacehub_api_token=os.getenv("HF_TOKEN"),
-)
+# embeddings =
 
-model = ChatHuggingFace(
-    llm = llm
-)
 
-tools = [find_media, get_media_summary]
-toolsByName = {tool.name: tool for tool in tools}
-modelWithTools = model.bind_tools(
-    tools,
+tools = [find_media, get_media_summary, get_media_recommendations, get_similar_media, get_cast, get_crew]
+tools_by_name = {tool.name: tool for tool in tools}
+model_with_tools = model.bind_tools(
+    tools=tools,
 )
 print("Tools bound successfully")
 
-def llm_call(state: dict):
+# result = model_with_tools.invoke("what is the summary of game of thrones (Use the apporiate tool to answer the question)")
+# print(result)
+
+def llm_call(state: MessagesState):
     """LLM decides whether to call a tool or not"""
     return {
         "messages": [
-            modelWithTools.invoke(
+            model_with_tools.invoke(
                 [
                     SystemMessage(
                         content="You are a helpful assistant tasked with finding the summary of movies and TV shows."
@@ -67,27 +64,36 @@ def llm_call(state: dict):
         "llm_calls": state.get('llm_calls', 0) + 1
     }
 
-def tool_node(state: dict):
+def tool_node(state: MessagesState):
     """Performs the tool call"""
     result = []
-    for tool_call in state["messages"][-1].tool_calls:
-        tool = toolsByName[tool_call["name"]]
-        observation = tool.invoke(tool_call["args"])
+    last_message = state["messages"][-1]
+    assert isinstance(last_message, AIMessage)
+    for tool_call in last_message.tool_calls:
+        tool = tools_by_name[tool_call["name"]]
+        # [Claude Code] A malformed tool call (bad/missing args) used to raise here and
+        # kill the whole program. Feeding the error back as the tool result instead lets
+        # the model read it and retry with corrected arguments on the next loop turn.
+        try:
+            observation = tool.invoke(tool_call["args"])
+        except Exception as e:
+            observation = f"Tool call failed: {e}"
         result.append(
             ToolMessage(
-                content={"type": "text", "text": str(observation)},
+                content=str(observation),
                 tool_call_id=tool_call["id"]
             )
         )
     return {"messages": result}
 
-def should_continue(state: MessagesState) -> Literal["tool_node", END]:
+
+def should_continue(state: MessagesState):
     """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
     messages = state["messages"]
     last_message = messages[-1]
 
     # If the LLM makes a tool call, then perform an action
-    if last_message.tool_calls:
+    if isinstance(last_message, AIMessage) and last_message.tool_calls:
         return "tool_node"
 
     # Otherwise, we stop (reply to the user)
@@ -117,7 +123,7 @@ if __name__ == "__main__":
         query = input("🎬 Ask about a movie (or 'quit'): ")
         if query.lower() in {"quit", "exit"}:
             break
-        messages = [HumanMessage(content=query)]
+        messages: list[AnyMessage] = [HumanMessage(content=query)]
         result = agent.invoke({"messages": messages})
         print("\nAssistant:")
         for msg in result["messages"]:

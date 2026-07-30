@@ -24,6 +24,9 @@ dependencies = [
     "openai",
     "langchain-google-genai>=4.2.7",
     "langchain-huggingface>=1.2.2",
+    "sumy>=0.12.0",
+    "nltk>=3.10.0",
+    "gradio>=6.21.0",
 ]
 
 # The machine-specific part: torch comes in via one of two extras
