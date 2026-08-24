@@ -60,7 +60,7 @@ Built as a **StateGraph** with conditional edges: the model loops between reason
 ```bash
 git clone https://github.com/Bolemonrin/Movie-ChatBot.git
 cd Movie-ChatBot
-pip install -r requirements.txt
+uv sync            # or: pip install -e .
 ```
 
 ### Configure
@@ -75,7 +75,8 @@ OPENAI_API_KEY=your_key_here   # only if using OpenAI models
 ### Run
 
 ```bash
-python main.py
+uv run python main.py     # terminal chat
+uv run python app.py      # Gradio web UI at http://localhost:7860
 ```
 
 Then chat:
@@ -90,17 +91,47 @@ AI: Since you liked the dark tone of Breaking Bad, here are similar crime dramas
 ## Project Structure
 
 ```
-├── main.py          # LangGraph agent: state, nodes, edges, memory, chat loop
-├── test_tools.py    # @tool-decorated TMDB tools (search, summary, cast, crew, recs)
-├── TMDB.py          # Raw TMDB API client (requests)
-└── requirements.txt
+├── main.py                     # entrypoint: terminal chat
+├── app.py                      # entrypoint: Gradio web chat
+│
+├── movie_chatbot/              # the application, one layer per directory
+│   ├── agent/                  # the LangGraph agent
+│   │   ├── prompt.py           #   the system prompt (prose only)
+│   │   ├── state.py            #   MediaQuery — what the graph carries between nodes
+│   │   ├── model.py            #   LLM backend + tool bindings (swap providers here)
+│   │   ├── nodes.py            #   llm_call, tool_node, update_context, should_continue
+│   │   └── graph.py            #   how the nodes are wired; the compiled media_agent
+│   │
+│   ├── tools/                  # the @tool functions the LLM may call
+│   │   ├── search.py           #   find_media
+│   │   ├── summary.py          #   get_media_summary
+│   │   ├── discovery.py        #   get_media_recommendations, get_similar_media
+│   │   ├── credits.py          #   get_cast, get_crew
+│   │   └── __init__.py         #   ALL_TOOLS — the list the agent binds
+│   │
+│   ├── ui/                     # front ends
+│   │   ├── gradio_app.py       #   the web chat
+│   │   └── rendering.py        #   pure string helpers (thinking blocks, poster links)
+│   ├── cli.py                  # terminal chat loop
+│   │
+│   ├── media_lookup.py         # title -> TMDB id (used by every tool; not a tool)
+│   ├── summarizer.py           # shortening plot overviews (not a tool)
+│   ├── formatters.py           # rendering a TMDB result as a tool-output line
+│   └── tmdb_client.py          # raw TMDB HTTP — the only module that touches the network
+│
+├── tests/                      # pytest suite; all network calls mocked
+└── experiments/                # scratch and superseded code, imported by nothing
 ```
+
+Each layer only reaches downwards: LLM knowledge stops at `agent/`, network
+knowledge stops at `tmdb_client.py`. Anything that isn't itself a tool lives
+outside `tools/`, so opening a tool module shows you tools and nothing else.
 
 ---
 
 ## Roadmap
 
-- [ ] Gradio web UI
+- [x] Gradio web UI
 - [ ] Genre classification for mood-based discovery
 - [ ] Streaming responses
 
