@@ -1,3 +1,10 @@
+"""Superseded and BROKEN, kept for reference only.
+
+An older variant of the agent running against a HuggingFace inference endpoint
+instead of Ollama. It imports its tools from `tests.test_tools`, which no longer
+holds tools, and it starts its chat loop at import time rather than under a
+__main__ guard. The maintained agent is movie_chatbot/agent/.
+"""
 import os
 from dotenv import load_dotenv
 load_dotenv()

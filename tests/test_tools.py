@@ -1,20 +1,15 @@
-"""Unit tests for the agent tools in tools.py.
+"""Unit tests for the agent tools and the lookup layer under them.
 
-All TMDB network calls are mocked (patched inside the `tools` module namespace,
-since tools.py does `from TMDB import *`), so these tests run offline and never
-touch the real API.
+All TMDB network calls are mocked, so these tests run offline and never touch
+the real API. Patch targets follow the split: every tool resolves a title
+through movie_chatbot.media_lookup, so search is patched there, while the
+endpoint each tool calls is patched in that tool's own module.
 """
 import pytest
 from unittest.mock import patch
 
-from tools import (
-    get_media_id,
-    resolve_media_id,
-    find_media,
-    get_media_summary,
-    get_cast,
-    get_crew,
-)
+from movie_chatbot.media_lookup import get_media_id, resolve_media_id
+from movie_chatbot.tools import find_media, get_cast, get_crew, get_media_summary
 
 # Canned TMDB search results, shaped like the real /search response items.
 MOVIE_RESULTS = [
@@ -28,25 +23,25 @@ MOVIE_RESULTS = [
 # ---------- get_media_id / resolve_media_id ----------
 
 def test_get_media_id_exact_match_is_case_insensitive():
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=MOVIE_RESULTS):
         assert get_media_id("DJANGO UNCHAINED") == 68718
         assert get_media_id("django unchained") == 68718
 
 
 def test_get_media_id_falls_back_to_first_result():
     """No exact title match -> first (most relevant) search result wins."""
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=MOVIE_RESULTS):
         assert get_media_id("django movie thing") == 68718
 
 
 def test_get_media_id_returns_none_when_no_results():
-    with patch("tools.search_for_media", return_value=[]):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=[]):
         assert get_media_id("does not exist") is None
 
 
 def test_resolve_media_id_raises_for_unknown_title():
     """Must raise (not return 0) so tools can report 'not found' to the model."""
-    with patch("tools.search_for_media", return_value=[]):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=[]):
         with pytest.raises(ValueError, match="No movie found"):
             resolve_media_id("does not exist", "movie")
 
@@ -54,7 +49,7 @@ def test_resolve_media_id_raises_for_unknown_title():
 # ---------- find_media ----------
 
 def test_find_media_formats_results():
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS):
+    with patch("movie_chatbot.tools.search.search_for_media", return_value=MOVIE_RESULTS):
         out = find_media.invoke({"media_name": "django", "media_type": "movie"})
     assert "ID: 68718" in out
     assert "Title: Django Unchained" in out
@@ -70,13 +65,13 @@ def test_find_media_schema_rejects_alias_media_types():
 
 
 def test_find_media_aliases_still_work_for_direct_calls():
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS) as mock_search:
+    with patch("movie_chatbot.tools.search.search_for_media", return_value=MOVIE_RESULTS) as mock_search:
         find_media.func("django", "film")
     mock_search.assert_called_once_with("django", "movie")
 
 
 def test_find_media_reports_no_results():
-    with patch("tools.search_for_media", return_value=[]):
+    with patch("movie_chatbot.tools.search.search_for_media", return_value=[]):
         out = find_media.invoke({"media_name": "zzz", "media_type": "movie"})
     assert "No movie results found" in out
 
@@ -86,8 +81,8 @@ def test_find_media_reports_no_results():
 def test_get_media_summary_returns_title_and_overview():
     details = {"id": 68718, "title": "Django Unchained",
                "overview": "A freed slave sets out to rescue his wife."}
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS), \
-         patch("tools.get_details", return_value=details):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=MOVIE_RESULTS), \
+         patch("movie_chatbot.tools.summary.get_details", return_value=details):
         out = get_media_summary.invoke({"media_name": "Django Unchained", "media_type": "movie"})
     assert "Django Unchained" in out
     assert "rescue his wife" in out
@@ -95,7 +90,7 @@ def test_get_media_summary_returns_title_and_overview():
 
 def test_get_media_summary_unknown_title_returns_readable_error():
     """The model must receive a 'not found' message it can act on, not a crash."""
-    with patch("tools.search_for_media", return_value=[]):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=[]):
         out = get_media_summary.invoke({"media_name": "zzz", "media_type": "movie"})
     assert "Unable to retrieve summary" in out
     assert "No movie found" in out
@@ -105,8 +100,8 @@ def test_get_media_summary_unknown_title_returns_readable_error():
 
 def test_get_cast_movie_uses_character_field():
     credits = {"cast": [{"name": "Jamie Foxx", "character": "Django"}]}
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS), \
-         patch("tools.get_media_credits", return_value=credits):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=MOVIE_RESULTS), \
+         patch("movie_chatbot.tools.credits.get_media_credits", return_value=credits):
         out = get_cast.invoke({"media_name": "Django Unchained", "media_type": "movie"})
     assert "Actor: Jamie Foxx | Character: Django" in out
 
@@ -116,15 +111,15 @@ def test_get_cast_tv_uses_roles_list():
     credits = {"cast": [{"name": "Peter Dinklage",
                          "roles": [{"character": "Tyrion Lannister"}]}]}
     tv_results = [{"id": 1399, "name": "Game of Thrones", "first_air_date": "2011-04-17"}]
-    with patch("tools.search_for_media", return_value=tv_results), \
-         patch("tools.get_media_credits", return_value=credits):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=tv_results), \
+         patch("movie_chatbot.tools.credits.get_media_credits", return_value=credits):
         out = get_cast.invoke({"media_name": "Game of Thrones", "media_type": "tv"})
     assert "Tyrion Lannister" in out
     assert "unknown" not in out
 
 
 def test_get_cast_error_returns_message_not_empty_string():
-    with patch("tools.search_for_media", return_value=[]):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=[]):
         out = get_cast.invoke({"media_name": "zzz", "media_type": "movie"})
     assert out != ""
     assert "Unable to retrieve cast" in out
@@ -137,8 +132,8 @@ def test_get_crew_movie_filters_directors():
         {"name": "Quentin Tarantino", "job": "Director", "popularity": 9.0},
         {"name": "Someone Else", "job": "Producer", "popularity": 5.0},
     ]}
-    with patch("tools.search_for_media", return_value=MOVIE_RESULTS), \
-         patch("tools.get_media_credits", return_value=credits):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=MOVIE_RESULTS), \
+         patch("movie_chatbot.tools.credits.get_media_credits", return_value=credits):
         out = get_crew.invoke({"media_name": "Django Unchained", "media_type": "movie"})
     assert "Quentin Tarantino" in out
     assert "Someone Else" not in out
@@ -151,8 +146,8 @@ def test_get_crew_tv_uses_jobs_list():
         {"name": "Random Grip", "jobs": [{"job": "Grip"}], "popularity": 1.0},
     ]}
     tv_results = [{"id": 1399, "name": "Game of Thrones", "first_air_date": "2011-04-17"}]
-    with patch("tools.search_for_media", return_value=tv_results), \
-         patch("tools.get_media_credits", return_value=credits):
+    with patch("movie_chatbot.media_lookup.search_for_media", return_value=tv_results), \
+         patch("movie_chatbot.tools.credits.get_media_credits", return_value=credits):
         out = get_crew.invoke({"media_name": "Game of Thrones", "media_type": "tv"})
     assert "David Benioff" in out
     assert "Random Grip" not in out
