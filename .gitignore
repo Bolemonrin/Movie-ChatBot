@@ -41,7 +41,7 @@ profile.yml
 models/
 
 # ── IDE ──
-.vscode/
+.vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea/
@@ -50,3 +50,13 @@ models/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# —— Database ——
+*.db
+
+# ── Node Modules ──
+node_modules/
+dist/
+
+# ── Git ──
+

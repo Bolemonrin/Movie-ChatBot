@@ -29,7 +29,7 @@ def main():
 
     while True:
         try:
-            user_input = input("🎬 Ask about a movie (or 'quit'): ")
+            user_input = input("> ")
             if user_input.lower() in EXIT_WORDS:
                 print("Exiting...")
                 break

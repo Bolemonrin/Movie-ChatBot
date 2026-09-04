@@ -82,7 +82,8 @@ def respond(message: str, history: list, thread_id: str | None):
                     elif node == "tool_node":
                         # The pending 🔧 panel's tool has now returned — mark it done
                         for m in history:
-                            if m.metadata and m.metadata.get("status") == "pending":
+                            meta = m.metadata if hasattr(m, 'metadata') else m.get('metadata')
+                            if meta and meta.get("status") == "pending":
                                 m.metadata["status"] = "done"
                         history.append(gr.ChatMessage(
                             role="assistant",
