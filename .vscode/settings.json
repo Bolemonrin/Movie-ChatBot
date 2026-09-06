@@ -1,5 +1,5 @@
+// Movie-ChatBot/.vscode/settings.json
 {
-  "python-envs.defaultEnvManager": "ms-python.python:venv",
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
@@ -18,5 +18,14 @@
   },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.tabSize": 4
+  },
+  "ruff.nativeServer": "on"
 }

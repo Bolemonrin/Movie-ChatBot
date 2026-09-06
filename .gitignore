@@ -31,9 +31,15 @@ dist/
 
 # ── Personal / runtime data ──
 data/
+logs
 *.log
 profile.yaml
 profile.yml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # ── Model / large files ──
 *.gguf
@@ -58,5 +64,14 @@ desktop.ini
 node_modules/
 dist/
 
-# ── Git ──
+# ── Frontend with chat history ──
+temp_frontend/
 
+
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
