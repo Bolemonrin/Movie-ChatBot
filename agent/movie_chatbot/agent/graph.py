@@ -7,6 +7,7 @@
     update_context <- tool_node
 """
 import sqlite3
+from pathlib import Path
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -40,7 +41,12 @@ agent_builder.add_edge("update_context", "llm_call")
 # per thread_id and reloads it before every invoke, so each turn sees the full history.
 # saver = InMemorySaver()
 
-conn = sqlite3.connect(database='chatbot.db', check_same_thread=False)
+# Anchored to the agent project directory, not the working directory. As a bare
+# relative path this silently created a fresh, empty database whenever the
+# process was started from anywhere else -- losing every remembered thread.
+DB_PATH = Path(__file__).resolve().parents[2] / 'chatbot.db'
+
+conn = sqlite3.connect(database=DB_PATH, check_same_thread=False)
 saver = SqliteSaver(conn=conn) # save the graph state per thread_id and reload it
 
 media_agent = agent_builder.compile(checkpointer=saver)

@@ -2,12 +2,14 @@
 
 Layers, outermost first:
 
-    ui/, cli.py     front ends (Gradio web chat, terminal REPL)
+    cli.py          the terminal front end (the web front end is the React app
+                    in frontend/, served over the api/ package)
     agent/          the LangGraph agent: prompt, state, model, nodes, graph
     tools/          the @tool functions the LLM is allowed to call
     media_lookup    title -> TMDB id
     summarizer      shortening plot overviews
     formatters      rendering a TMDB result as a tool-output line
+    rendering       pure string helpers (thinking blocks, poster links)
     tmdb_client     raw HTTP against the TMDB API
 
 Each layer only reaches downwards, so the LLM knowledge stops at agent/ and the

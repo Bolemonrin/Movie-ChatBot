@@ -1,7 +1,8 @@
-"""Pure text helpers for the chat UI.
+"""Pure text helpers for presenting agent output.
 
-No Gradio, no agent -- just string in, string out, so they can be read and
-tested without spinning anything up.
+No agent, no transport -- just string in, string out, so they can be read and
+tested without spinning anything up. split_thinking is what the API layer needs
+to separate qwen3's <think> blocks from the user-facing answer.
 """
 import re
 

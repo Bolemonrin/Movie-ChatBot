@@ -1,67 +1,21 @@
-[project]
-name = "your-project-name"
-version = "0.1.0"
-requires-python = ">=3.12"
-
-# Everything identical on both machines lives here
-dependencies = [
-    "langchain",
-    "langchain-community",
-    "langchain-openai",
-    "langchain-core",
-    "langchain-ollama",
-    "langgraph",
-    "langsmith",
-    "python-dotenv",
-    "requests",
-    "pydantic",
-    "tqdm",
-    "transformers",
-    "huggingface-hub",
-    "streamlit",
-    "ipython",
-    "flask",
-    "openai",
-    "langchain-google-genai>=4.2.7",
-    "langchain-huggingface>=1.2.2",
-    "sumy>=0.12.0",
-    "nltk>=3.10.0",
-    "gradio>=6.21.0",
-    "langgraph-checkpoint-sqlite>=3.1.1",
-]
-
-# The machine-specific part: torch comes in via one of two extras
-[project.optional-dependencies]
-cpu = [
-    "torch",
-    "torchvision",
-]
-cu130 = [
-    "torch",
-    "torchvision",
-]
+# Workspace root. Owns no code of its own — it exists to tie the members
+# together under one uv.lock and one .venv, so `agent` and `api` can never
+# drift onto different versions of langchain, pydantic or anything else.
+[tool.uv.workspace]
+members = ["agent", "api"]
 
 [tool.uv]
-# Tells the resolver these extras are mutually exclusive,
-# so it can lock BOTH variants without them fighting
+# The two torch extras are mutually exclusive; declaring that lets the resolver
+# lock both variants without them fighting. Qualified by package because the
+# extras belong to the `movie-chatbot` member, not to the root.
 conflicts = [
     [
-        { extra = "cpu" },
-        { extra = "cu130" },
+        { package = "movie-chatbot", extra = "cpu" },
+        { package = "movie-chatbot", extra = "cu130" },
     ],
 ]
 
-# Pin torch/torchvision to the right index depending on which extra is active
-[tool.uv.sources]
-torch = [
-    { index = "pytorch-cpu", extra = "cpu" },
-    { index = "pytorch-cu130", extra = "cu130" },
-]
-torchvision = [
-    { index = "pytorch-cpu", extra = "cpu" },
-    { index = "pytorch-cu130", extra = "cu130" },
-]
-
+# Indexes are resolved workspace-wide, so they have to live at the root.
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
@@ -71,12 +25,3 @@ explicit = true
 name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
-
-[dependency-groups]
-dev = [
-    "pytest>=9.1.1",
-]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]      # <-- adds the project root to sys.path
