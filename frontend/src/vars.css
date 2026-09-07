@@ -1,0 +1,55 @@
+/** @format */
+
+:root {
+  /* Core palette (yours) */
+  --color-text: #fff;
+  --color-primary: #576cbc;
+  --color-secondary: #19376d;
+  --color-dark: #0b2447;
+  --color-bg: #3c3c3c;
+
+  /* Surfaces — layered above --color-bg for depth */
+  --color-surface: #4a4a4a; /* chat panel / card background */
+  --color-surface-raised: #565656; /* input bar, hover states */
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-history: #565656; /* lighter than surface — reads as "raised" */
+  --color-history-hover: #626262;
+  --color-history-active: var(--color-primary);
+  --color-history-text: #fff;
+  --color-history-text-muted: #a9a9a9;
+
+  /* Message bubbles */
+  --color-bubble-user: var(--color-primary);
+  --color-bubble-user-text: #fff;
+  --color-bubble-ai: var(--color-surface-raised);
+  --color-bubble-ai-text: #e8ecfb;
+
+  /* Text hierarchy */
+  --color-text-muted: #8b9bc4;
+
+  /* Status (tool calls, errors — you already surface these in Gradio) */
+  --color-pending: #d4a94e;
+  --color-error: #d15c5c;
+  --color-success: #4ea672;
+
+  /* Fonts */
+  --font-roboto: 'Roboto';
+  --font-outfit: 'Outfit';
+  --font-body: var(--font-roboto), system-ui, sans-serif;
+  --font-display: var(--font-outfit), system-ui, sans-serif;
+
+  /* Spacing scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+
+  /* Radius */
+  --radius-bubble: 1.1rem;
+  --radius-sm: 0.5rem;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-bubble: 0 2px 8px rgba(1, 13, 36, 0.4);
+}
