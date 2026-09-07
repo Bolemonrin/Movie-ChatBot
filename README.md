@@ -95,20 +95,21 @@ User: recommend shows like Breaking Bad
 AI: Since you liked the dark tone of Breaking Bad, here are similar crime dramas...
 ```
 
-**React web UI** — http://localhost:5173. Needs Node.js, and two terminals,
-because it is two processes: the vite dev server proxies `/api` through to the
-FastAPI server.
+**React web UI** — *in progress.* The interface is built; the FastAPI layer
+that connects it to the agent is not, so this currently renders the UI without
+answers. Needs Node.js.
 
 ```bash
-uv run movie-chatbot-web      # terminal 1 — React dev server
+uv run movie-chatbot-web
 ```
 
-```bash
-uv run movie-chatbot-api      # terminal 2 — FastAPI backend (not built yet)
-```
+It installs `frontend/node_modules` on first run if missing, so there is no
+separate `npm install` step.
 
-`movie-chatbot-web` installs `frontend/node_modules` on first run if it is
-missing, so there is no separate `npm install` step.
+Once the API layer lands, this becomes a single process: `npm run build` emits
+static files into `frontend/dist`, FastAPI serves them alongside `/api` on one
+port, and no separate dev server or proxy is involved. Editing the frontend will
+still use vite's dev server for hot reload, but running the app will not.
 
 ---
 
@@ -165,6 +166,44 @@ outside `tools/`, so opening a tool module shows you tools and nothing else.
 
 `api` depends on `agent` as a workspace member, which uv installs editable — so
 edits to the agent are live in the API with no reinstall.
+
+---
+
+## Development
+
+The commands above are for *running* the project. If you are changing it:
+
+**Frontend, with hot reload.** Vite's dev server transforms and pushes changes
+to the browser in milliseconds, which is worth having when you are iterating on
+a component. It serves on http://localhost:5173 and proxies `/api` through to
+the FastAPI server on `:8000`, so the browser only ever sees one origin and CORS
+never comes up.
+
+```bash
+uv run movie-chatbot-web
+```
+
+Today this is the only way to run the React UI. Once the API layer lands the
+default becomes a single built process, and this stays as the development path
+— vite's dev server is for editing the frontend, not for running the app.
+
+**Tests.** All network calls are mocked, so the suite needs no TMDB token.
+
+```bash
+uv run pytest
+```
+
+**Frontend lint and format.** A husky pre-commit hook runs `eslint --fix` and
+`prettier --write` over staged files, so formatting is handled on commit. To run
+it by hand:
+
+```bash
+npm --prefix frontend run lint
+```
+
+**Two things that will surprise you in `frontend/`** are documented in
+[frontend/README.md](frontend/README.md) — both are silent failures rather than
+errors.
 
 ---
 
