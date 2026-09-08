@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "FastAPI transport layer over the movie-chatbot langgraph agent."
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi",
+    "fastapi[standard]",
     "uvicorn[standard]",
     "movie-chatbot",
 ]
