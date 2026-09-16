@@ -1,28 +1,24 @@
-import operator
-import uuid
+"""Superseded and BROKEN, kept for reference only.
 
+An older variant of the agent running against a HuggingFace inference endpoint
+instead of Ollama. It imports its tools from `tests.test_tools`, which no longer
+holds tools, and it starts its chat loop at import time rather than under a
+__main__ guard. The maintained agent is movie_chatbot/agent/.
+"""
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage
-from langchain_ollama import ChatOllama
-from typing import Annotated, List
-from typing_extensions import TypedDict, NotRequired
-
-# [Claude Code] Was `from tests.test_tools import *`: that file was a stale pre-fix copy
-# of the real tools (it still told the model to pass IDs, the bug behind the pydantic
-# ValidationError). The agent must import the maintained tools from tools.py; the tests
-# folder now contains actual tests.
-from tools import (
-    find_media,
-    get_media_summary,
-    get_media_recommendations,
-    get_similar_media,
-    get_cast,
-    get_crew,
-)
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
+from langgraph.store.memory import InMemoryStore
+from typing import Annotated, TypedDict, List, Literal
+from tests.test_tools import *
+import operator
+import uuid
 
 
 SYSTEM_PROMPT = """You are an expert Media Discovery Assistant capable of finding movies and TV shows, retrieving detailed cast/crew info, and providing personalized recommendations.
@@ -73,13 +69,17 @@ Call `get_crew(media_name="[Insert Name from prev turn]", media_type="tv")`
 """
 
 
-model = ChatOllama(
-    model="qwen3:8b",
-    temperature=0,
-    base_url="http://dabolu:11434",
-    # [Claude Code] Dropped validate_model_on_init=True: it pings the Ollama server at
-    # import time, so simply importing this module (e.g. from the tests) failed whenever
-    # the server was unreachable. Connection problems now surface on the first real call.
+llm = HuggingFaceEndpoint(
+    repo_id="meta-llama/Llama-3.1-8B-Instruct",
+    provider="scaleway",
+    task="conversational",
+    max_new_tokens=1024,
+    temperature=0.3,
+    huggingfacehub_api_token=os.getenv("HF_TOKEN"),
+)
+
+model = ChatHuggingFace(
+    llm = llm
 )
 
 # Define the available tools
@@ -106,24 +106,37 @@ class MediaQuery(TypedDict):
     messages: Annotated[List[AnyMessage], operator.add]
 
     # persistent context
-    # [Claude Code] NotRequired lets the REPL invoke with just {"messages": [...]}. The
-    # old loop passed last_media_name=None etc. on every turn, which overwrote whatever
-    # the checkpointer had remembered with None — one of the reasons follow-up questions
-    # forgot the movie being discussed.
-    last_media_name: NotRequired[str | None]
-    last_media_type: NotRequired[str | None]
-    llm_calls: NotRequired[int]
+    last_media_name: str | None
+    last_media_type: str | None
+    last_crew: str | None
+    last_cast: str | None
+
+    # current query info
+    user: str
+    llm_calls: int
+
 
 
 def llm_call(state: MediaQuery):
-    """Main LLM call to process user queries about media."""
+    """
+    Main LLM call to process user queries about media.
+
+
+    """
     messages = state['messages']
-    last_media_name = state.get('last_media_name')
-    last_media_type = state.get('last_media_type')
+    last_media_name = state['last_media_name']
+    last_media_type = state['last_media_type']
+    last_crew = state['last_crew']
+    last_cast = state['last_cast']
+    user = state['user']
 
     context = []
     if last_media_name:
-        context.append(f"The user is currently interested in '{last_media_name}', which is a {last_media_type}.")
+        context.append(f"{user} is interested in '{last_media_name}', which is a {last_media_type}.")
+    if last_crew:
+        context.append(f"The last crew information retrieved was: {last_crew}.")
+    if last_cast:
+        context.append(f"The last cast information retrieved was: {last_cast}.")
 
     system_context = SYSTEM_PROMPT
     if context:
@@ -135,29 +148,26 @@ def llm_call(state: MediaQuery):
     llm_messages = [SystemMessage(content=system_context)] + messages
 
     # call the model with tools
-    response = model_with_tools.invoke(llm_messages)
+    response = model_with_tools.invoke(
+        llm_messages
+    )
 
-    return {
-        'messages': [response],
-        'llm_calls': state.get('llm_calls', 0) + 1,
-    }
+    return {'messages': [response]}
 
 
 def tool_node(state: MediaQuery):
     """Perform tool calls based on LLM requests."""
-    last_message = state['messages'][-1]
-    assert isinstance(last_message, AIMessage)
+
+    messages = state['messages']
+    last_message = messages[-1]
 
     results = []
     for tool_call in last_message.tool_calls:
-        tool = tools_with_names[tool_call['name']]
-        # [Claude Code] A malformed tool call (bad/missing args) used to raise and kill
-        # the whole program. Feeding the error back as the tool result instead lets the
-        # model read it and retry with corrected arguments on the next loop turn.
-        try:
-            observation = tool.invoke(tool_call['args'])
-        except Exception as e:
-            observation = f"Tool call failed: {e}"
+        tool_name = tool_call['name']
+        tool_args = tool_call['args']
+
+        tool = tools_with_names.get(tool_name)
+        tool_result = tool.invoke(tool_args)
 
         results.append(
             ToolMessage(
@@ -167,39 +177,50 @@ def tool_node(state: MediaQuery):
             )
         )
 
-    # return all tool results,
+    # return all tool result,
     # they will be added to the conversation state['messages'] for next LLM call
     return {'messages': results}
 
 
 def update_context(state: MediaQuery):
-    """Remember the most recently discussed title so follow-ups like "who is in it?" work."""
+    """Update the context based on the user's intent."""
+
+    messages = state['messages']
     updates = {}
 
-    # [Claude Code] The old version also checked `'get_crew' in args` / `'get_cast' in
-    # args — tool call args only ever contain parameter names (media_name, media_type,
-    # ...), never tool names, so those branches could never run and were removed.
-    for msg in reversed(state['messages']):
-        if isinstance(msg, AIMessage) and msg.tool_calls:
+    for msg in reversed(messages):
+        if isinstance(msg, AIMessage) and hasattr(msg, 'tool_calls') and msg.tool_calls:
             for tool_call in msg.tool_calls:
                 args = tool_call.get('args', {})
 
-                if args.get('media_name') and 'last_media_name' not in updates:
+                # Extract media name if present and not already captured
+                if 'media_name' in args and args['media_name'] and 'last_media_name' not in updates:
                     updates['last_media_name'] = args['media_name']
 
-                if args.get('media_type') and 'last_media_type' not in updates:
+                # Extract media type if present and not already captured
+                if 'media_type' in args and args['media_type'] and 'last_media_type' not in updates:
                     updates['last_media_type'] = args['media_type']
 
-            break  # Stop after the most recent AI message that made tool calls
+                # Extract crew info if present and not already captured
+                if 'get_crew' in args and args['get_crew'] and 'last_crew' not in updates:
+                    updates['last_crew'] = args['get_crew']
+
+                # Extract cast info if present and not already captured
+                if 'get_cast' in args and args['get_cast'] and 'last_cast' not in updates:
+                    updates['last_cast'] = args['get_cast']
+
+            break  # Stop after processing the most recent tool call with relevant info
 
     return updates
 
 
 def should_continue(state: MediaQuery):
-    """Decide whether to run tools or finish the turn."""
-    last_message = state['messages'][-1]
+    """deciding whether we continue to the next node"""
 
-    if isinstance(last_message, AIMessage) and last_message.tool_calls:
+    messages = state['messages']
+    last_message = messages[-1]
+
+    if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
         return "tool_node"  # there are tool calls to process
 
     return END
@@ -230,37 +251,54 @@ agent_builder.add_edge("update_context", "llm_call")
 # per thread_id and reloads it before every invoke, so each turn sees the full history.
 # agenttest.py had no checkpointer, which is why it forgot everything between questions.
 saver = InMemorySaver()
+store = InMemoryStore()
 
-media_agent = agent_builder.compile(checkpointer=saver)
+# compile the agent
+media_agent = agent.compile(
+    store=store,
+    checkpointer=saver
+)
 
 
-# [Claude Code] The REPL is now guarded by __main__ so tests (and other modules) can
-# import media_agent without launching an interactive input loop.
-if __name__ == "__main__":
-    config = {
-        'configurable': {
-            'thread_id': str(uuid.uuid4()),
-        }
+thread_id = "media_query_1"
+user_id = str(uuid.uuid4())
+
+config = {
+    'configurable': {
+        'thread_id': thread_id,
+        'user_id': user_id,
     }
+}
 
-    while True:
-        try:
-            user_input = input("🎬 Ask about a movie (or 'quit'): ")
-            if user_input.lower() in ['exit', 'quit', 'q']:
-                print("Exiting...")
-                break
 
-            results = media_agent.invoke(
-                {'messages': [HumanMessage(content=user_input)]},
-                config=config,
-            )
-        except Exception as e:
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
+while True:
+    try:
+        user_input = input("User: ")
+        if user_input.lower() in ['exit', 'quit', 'q']:
+            print("Exiting...")
             break
 
-        # [Claude Code] The old loop printed the FIRST non-tool AIMessage in the history,
-        # which once the checkpointer accumulates turns is the OLDEST reply — every turn
-        # re-printed the first answer. The newest reply is simply the last message.
-        print(f"\nAI: {results['messages'][-1].content}\n")
+        # create new human message
+        human_message = HumanMessage(content=user_input)
+        results = media_agent.invoke(
+            {
+                'messages': [human_message],
+                'last_media_name': None,  # ← Add default
+                'last_media_type': None,  # ← Add default
+                'last_crew': None,        # ← Add default
+                'last_cast': None,        # ← Add default
+                'user': user_id,          # ← Add user
+                'llm_calls': 0            # ← Add counter
+            },
+            config=config
+        )
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()  # ← Helpful for debugging
+        break
+
+    for msg in results['messages']:
+        if isinstance(msg, AIMessage) and not msg.tool_calls:
+            print(f"AI: {msg.content}")
+            break

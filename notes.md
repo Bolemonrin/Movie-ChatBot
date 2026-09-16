@@ -1,5 +1,13 @@
 # Testing note: why we patch `agenttest.modelWithTools` (not the model object)
 
+> **Path note (kept for the reasoning, not the paths).** These examples predate the
+> split into `movie_chatbot/`. The agent's `llm_call` now lives in
+> `movie_chatbot/agent/nodes.py`, which does `from .model import model_with_tools`
+> — so by the very rule this note explains, the current patch targets are
+> `movie_chatbot.agent.nodes.model_with_tools` and
+> `movie_chatbot.agent.nodes.tools_with_names`, not the `agent.model` module where
+> they are defined. See `tests/test_agent.py`.
+
 ## The pattern
 
 ```python

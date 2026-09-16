@@ -1,0 +1,4 @@
+# husky runs hooks from the git root (one level up), but package.json,
+# eslint and prettier all live in frontend/ — so step in first.
+cd frontend
+npx lint-staged

@@ -1,0 +1,15 @@
+# Normalize all text files to LF in the repository.
+# Windows checkouts still get LF, which keeps Prettier's
+# `endOfLine: "lf"` rule from firing on every line.
+* text=auto eol=lf
+
+# Binary files - never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.gguf binary
+*.safetensors binary
+*.db binary
