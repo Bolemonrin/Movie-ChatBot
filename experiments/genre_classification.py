@@ -1,3 +1,9 @@
+"""Spike: classifying a plot blurb into TMDB genre ids with a HF model.
+
+Not wired into the agent — this is the groundwork for the "mood-based
+discovery" roadmap item. Needs torch + transformers and downloads a model on
+first run.
+"""
 import torch
 print(torch.cuda.is_available())
 

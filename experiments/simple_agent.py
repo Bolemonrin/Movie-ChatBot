@@ -1,3 +1,10 @@
+"""Superseded: an earlier, simpler version of the agent, kept for reference.
+
+No checkpointer and no update_context node, so it forgets everything between
+questions. The maintained agent is movie_chatbot/agent/.
+
+Run from the repo root:  python -m experiments.simple_agent
+"""
 from langchain.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage, HumanMessage
 from typing_extensions import TypedDict, Annotated, NotRequired
 from langchain.chat_models import init_chat_model
@@ -8,8 +15,14 @@ from langchain_ollama import ChatOllama
 from typing import Literal
 import operator
 
-# Import tools from test_tools.py
-from tools import find_media, get_media_summary, get_media_recommendations, get_similar_media, get_cast, get_crew
+from movie_chatbot.tools import (
+    find_media,
+    get_media_summary,
+    get_media_recommendations,
+    get_similar_media,
+    get_cast,
+    get_crew,
+)
 
 from dotenv import load_dotenv
 import os

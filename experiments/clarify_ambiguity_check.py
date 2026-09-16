@@ -1,3 +1,13 @@
+"""Superseded and BROKEN, kept for reference only.
+
+A manual print-based check (not a pytest test, despite its original name
+test_tools.py) for a clarify_for_ambiguity helper that no longer exists on any
+branch — so the import on the first line fails. It also ran its checks at import
+time rather than under a __main__ guard.
+
+Renamed off the test_ prefix so pytest and IDE test discovery stop trying to
+collect it. The real tool tests are in tests/test_tools.py.
+"""
 from tools import clarify_for_ambiguity
 
 # --- Mock find_cast so it doesn't make API calls ---

@@ -1,4 +1,4 @@
-"""Tests for the raw TMDB client in TMDB.py.
+"""Tests for the raw TMDB client in movie_chatbot/tmdb_client.py.
 
 HTTP is mocked with unittest.mock, so no network or API key is needed. One live
 smoke test at the bottom runs only when TMDB_ACCESS_TOKEN is set.
@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from TMDB import (
+from movie_chatbot.tmdb_client import (
     search_for_media,
     get_details,
     get_recommendations,
@@ -37,21 +37,21 @@ def _fake_response(json_data, status=200):
 
 def test_search_returns_result_list():
     payload = {"results": [{"id": 603, "title": "The Matrix"}]}
-    with patch("TMDB.requests.get", return_value=_fake_response(payload)):
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response(payload)):
         results = search_for_media("The Matrix", "movie")
     assert results == payload["results"]
 
 
 def test_get_details_returns_dict():
     payload = {"id": 603, "title": "The Matrix", "overview": "..."}
-    with patch("TMDB.requests.get", return_value=_fake_response(payload)):
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response(payload)):
         details = get_details("movie", 603)
     assert details["title"] == "The Matrix"
 
 
 def test_credits_endpoint_switches_for_tv():
     """Movies use /credits; TV must use /aggregate_credits."""
-    with patch("TMDB.requests.get", return_value=_fake_response({"cast": []})) as mock_get:
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response({"cast": []})) as mock_get:
         get_media_credits("movie", 603)
         get_media_credits("tv", 1399)
 
@@ -63,7 +63,7 @@ def test_credits_endpoint_switches_for_tv():
 
 def test_requests_send_a_timeout():
     """Without a timeout, one stalled TMDB call hangs the whole agent."""
-    with patch("TMDB.requests.get", return_value=_fake_response({"results": []})) as mock_get:
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response({"results": []})) as mock_get:
         search_for_media("The Matrix", "movie")
     assert mock_get.call_args.kwargs.get("timeout") == 10
 
@@ -71,7 +71,7 @@ def test_requests_send_a_timeout():
 # ---------- error paths: swallowed, and the right empty type ----------
 
 def test_search_error_returns_empty_list():
-    with patch("TMDB.requests.get", return_value=_fake_response({}, status=404)):
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response({}, status=404)):
         assert search_for_media("The Matrix", "invalid_media_type") == []
 
 
@@ -84,12 +84,12 @@ def test_search_error_returns_empty_list():
 def test_dict_functions_return_empty_dict_on_error(func, args):
     """These return dicts on success, so their error value must be {} — returning []
     made callers crash with "'list' object has no attribute 'get'"."""
-    with patch("TMDB.requests.get", return_value=_fake_response({}, status=404)):
+    with patch("movie_chatbot.tmdb_client.requests.get", return_value=_fake_response({}, status=404)):
         assert func(*args) == {}
 
 
 def test_network_exception_is_swallowed():
-    with patch("TMDB.requests.get", side_effect=requests.exceptions.ConnectionError("down")):
+    with patch("movie_chatbot.tmdb_client.requests.get", side_effect=requests.exceptions.ConnectionError("down")):
         assert search_for_media("The Matrix", "movie") == []
         assert get_details("movie", 603) == {}
 

@@ -1,7 +1,16 @@
+"""Raw HTTP client for the TMDB REST API.
+
+This is the only module that talks to the network. Every function here maps 1:1
+onto a TMDB endpoint, returns plain parsed JSON, and never raises: request errors
+are logged and swallowed so callers always get an empty value of the right type
+({} for the detail endpoints, [] for search) instead of a crash.
+
+Interpretation and formatting of this data belongs one layer up, in the agent
+tools -- nothing in this file knows about the LLM.
+"""
 import os
 from dotenv import load_dotenv
 import requests
-from difflib import SequenceMatcher
 
 load_dotenv()
 
@@ -101,17 +110,3 @@ def get_media_credits(media_type: str, media_id: int):
         # log the error
         print(f"[TMDB] get_media_credits error: {e}")
         return {}
-
-
-# type = 'tv'
-# id = 78191
-# credits = get_media_credits(type, id)
-# print(credits)
-# recommendations = get_recommendations("movie", 24428)
-# for rec in recommendations['results']:
-#     title = rec.get('title')
-#     overview = rec.get('overview')
-#     id = rec.get('id')
-#     background = rec.get('backdrop_path')
-#     print(f'Media ID: {id}\nTitle: {title}\nOverview: {overview}\nBackdrop: {background}\n')
-# print(recommendations)

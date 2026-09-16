@@ -1,16 +1,17 @@
-"""Tests for the langgraph agent in main.py.
+"""Tests for the langgraph agent in movie_chatbot/agent/.
 
 The LLM and the tools are mocked, so no Ollama server or TMDB access is needed.
-main.py's agent is compiled with a checkpointer, so every invoke needs a config
+The agent is compiled with a checkpointer, so every invoke needs a config
 with a thread_id — a fresh uuid per test keeps tests isolated from each other.
 """
 import uuid
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.runnables import RunnableConfig
 
 
-def _config():
+def _config() -> RunnableConfig:
     """Fresh conversation thread for each test so no state leaks between them."""
     return {"configurable": {"thread_id": str(uuid.uuid4())}}
 
@@ -26,8 +27,8 @@ def test_agent_returns_reply_without_tools():
     mock_model = MagicMock()
     mock_model.invoke.return_value = fake_reply
 
-    with patch("main.model_with_tools", mock_model):
-        from main import media_agent
+    with patch("movie_chatbot.agent.nodes.model_with_tools", mock_model):
+        from movie_chatbot.agent import media_agent
         result = media_agent.invoke(
             {"messages": [HumanMessage(content="movies like django")]},
             config=_config(),
@@ -49,9 +50,9 @@ def test_agent_routes_to_tool_when_tool_called():
     mock_tool = MagicMock()
     mock_tool.invoke.return_value = "mocked tool output"
 
-    with patch("main.model_with_tools", mock_model), \
-         patch("main.tools_with_names", {"find_media": mock_tool}):
-        from main import media_agent
+    with patch("movie_chatbot.agent.nodes.model_with_tools", mock_model), \
+         patch("movie_chatbot.agent.nodes.tools_with_names", {"find_media": mock_tool}):
+        from movie_chatbot.agent import media_agent
         result = media_agent.invoke(
             {"messages": [HumanMessage(content="find django")]},
             config=_config(),
@@ -72,8 +73,8 @@ def test_agent_remembers_history_across_turns():
         AIMessage(content="He also directed WALL-E."),
     ]
 
-    with patch("main.model_with_tools", mock_model):
-        from main import media_agent
+    with patch("movie_chatbot.agent.nodes.model_with_tools", mock_model):
+        from movie_chatbot.agent import media_agent
         config = _config()  # one shared thread across both turns
 
         media_agent.invoke(
@@ -106,9 +107,9 @@ def test_agent_updates_last_media_context():
     mock_tool = MagicMock()
     mock_tool.invoke.return_value = "Title: Finding Nemo\nOverview: fish gets lost"
 
-    with patch("main.model_with_tools", mock_model), \
-         patch("main.tools_with_names", {"get_media_summary": mock_tool}):
-        from main import media_agent
+    with patch("movie_chatbot.agent.nodes.model_with_tools", mock_model), \
+         patch("movie_chatbot.agent.nodes.tools_with_names", {"get_media_summary": mock_tool}):
+        from movie_chatbot.agent import media_agent
         config = _config()
         media_agent.invoke(
             {"messages": [HumanMessage(content="summary of finding nemo")]},
@@ -131,9 +132,9 @@ def test_tool_error_is_fed_back_to_model_not_raised():
     mock_tool = MagicMock()
     mock_tool.invoke.side_effect = ValueError("boom")
 
-    with patch("main.model_with_tools", mock_model), \
-         patch("main.tools_with_names", {"find_media": mock_tool}):
-        from main import media_agent
+    with patch("movie_chatbot.agent.nodes.model_with_tools", mock_model), \
+         patch("movie_chatbot.agent.nodes.tools_with_names", {"find_media": mock_tool}):
+        from movie_chatbot.agent import media_agent
         result = media_agent.invoke(
             {"messages": [HumanMessage(content="find django")]},
             config=_config(),
